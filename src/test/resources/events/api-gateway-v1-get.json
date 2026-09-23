@@ -1,0 +1,26 @@
+{
+  "resource": "/api/metrics/{proxy+}",
+  "path": "/api/metrics/get/2026-08-03",
+  "httpMethod": "GET",
+  "headers": {
+    "Authorization": "Bearer sentinel-token-value",
+    "Host": "api.metricity.click"
+  },
+  "queryStringParameters": null,
+  "pathParameters": {
+    "proxy": "get/2026-08-03"
+  },
+  "body": null,
+  "isBase64Encoded": false,
+  "requestContext": {
+    "resourceId": "abc123",
+    "stage": "$default",
+    "requestId": "9f1b2c3d-0000-4000-8000-000000000001",
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "path": "/api/metrics/get/2026-08-03",
+    "httpMethod": "GET",
+    "apiId": "kxk07mmvrk"
+  }
+}

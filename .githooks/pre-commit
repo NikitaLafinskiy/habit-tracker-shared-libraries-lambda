@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Formats staged Java with Spotless so CI's spotlessCheck never fails on layout.
+#
+#   Install (once per clone):  git config core.hooksPath .githooks
+#   Skip for one commit:       git commit --no-verify
+#
+# Formatting only. Checkstyle and Error Prone need a compile and are left to CI
+# and to `./gradlew check`. See README.md "Code style" for which tool owns what.
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+mapfile -t -d '' staged < <(git diff --cached --name-only --diff-filter=ACMR -z -- '*.java')
+
+if [ "${#staged[@]}" -eq 0 ]; then
+    exit 0
+fi
+
+# Spotless rewrites whole files and `git add` stages whole files. For a file carrying
+# unstaged edits alongside its staged ones, re-adding it would sweep that unstaged work
+# into the commit - so stop, rather than quietly committing something never reviewed.
+partial=()
+for f in "${staged[@]}"; do
+    if ! git diff --quiet -- "$f"; then
+        partial+=("$f")
+    fi
+done
+
+if [ "${#partial[@]}" -gt 0 ]; then
+    echo "pre-commit: these files are only partly staged, refusing to format:" >&2
+    printf '  %s\n' "${partial[@]}" >&2
+    echo >&2
+    echo "Formatting rewrites the whole file, so re-staging it would commit the unstaged" >&2
+    echo "changes too. Stage them, stash them, or use --no-verify." >&2
+    exit 1
+fi
+
+# Whole-project apply: Spotless has no supported way to limit itself to a file list,
+# and its up-to-date checking makes this ~0.4s warm anyway. The cost is that dirty
+# *unstaged* Java in the worktree also gets formatted - harmless, but not committed.
+# Output is captured and only replayed on failure: the Gradle launcher prints JVM
+# warnings to stderr on every run that --quiet does not suppress, and they have no
+# business in a clean commit.
+if ! output=$(./gradlew --quiet spotlessApply < /dev/null 2>&1); then
+    echo "$output" >&2
+    echo "pre-commit: spotlessApply failed - commit aborted." >&2
+    exit 1
+fi
+
+git add -- "${staged[@]}"

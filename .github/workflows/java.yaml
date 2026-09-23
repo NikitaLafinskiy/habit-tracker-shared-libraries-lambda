@@ -1,0 +1,23 @@
+name: Java CI
+run-name: ${{ github.ref_name }}-${{ github.actor }}
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  java-ci:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Java CI
+        uses: NikitaLafinskiy/habit-tracker-iac/.github/actions/java-ci@main
+        with:
+          java-version: '24'
+
+      - name: Build
+        run: ./gradlew build --no-daemon

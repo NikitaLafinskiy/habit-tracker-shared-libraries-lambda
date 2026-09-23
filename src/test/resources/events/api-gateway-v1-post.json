@@ -1,0 +1,26 @@
+{
+  "resource": "/api/metrics/{proxy+}",
+  "path": "/api/metrics/blueprints",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "Host": "api.metricity.click"
+  },
+  "queryStringParameters": null,
+  "pathParameters": {
+    "proxy": "blueprints"
+  },
+  "body": "{\"name\":\"Weight\",\"icon\":\"target\",\"color\":\"#8C93EA\",\"type\":\"GAUGE\",\"units\":\"kg\"}",
+  "isBase64Encoded": false,
+  "requestContext": {
+    "resourceId": "abc123",
+    "stage": "$default",
+    "requestId": "9f1b2c3d-0000-4000-8000-000000000002",
+    "identity": {
+      "sourceIp": "203.0.113.10"
+    },
+    "path": "/api/metrics/blueprints",
+    "httpMethod": "POST",
+    "apiId": "kxk07mmvrk"
+  }
+}

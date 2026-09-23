@@ -1,0 +1,53 @@
+// Code-quality wiring, kept out of build.gradle so the build file stays about the
+// library. Division of labour (see README.md "Code style"):
+//
+//   Spotless    - owns every mechanical concern: layout, wrapping, whitespace,
+//                 import order. `spotlessApply` fixes; `spotlessCheck` gates CI.
+//   Checkstyle  - only the semantic rules a formatter cannot express (naming,
+//                 declaration order, visibility, switch correctness).
+//   Error Prone - real defects at compile time, the class of bug Checkstyle never
+//                 caught. `-PerrorproneFix` rewrites the fixable ones in place.
+
+ext.googleJavaFormatVersion = '1.27.0'
+ext.errorProneVersion = '2.50.0'
+ext.checkstyleToolVersion = '10.26.1'
+
+spotless {
+    java {
+        // Annotation processors (MapStruct, Lombok) write into build/ - never format output.
+        target 'src/*/java/**/*.java'
+
+        // aosp() is 4-space indent / 8-space continuation / 100-column wrap, which is
+        // exactly what the old Checkstyle layout rules specified. Plain googleJavaFormat()
+        // would be 2-space. Import ordering and unused-import removal come with the step.
+        googleJavaFormat(googleJavaFormatVersion).aosp()
+
+        formatAnnotations()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+checkstyle {
+    toolVersion = checkstyleToolVersion
+    configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+    maxWarnings = 0
+}
+
+dependencies {
+    errorprone "com.google.errorprone:error_prone_core:$errorProneVersion"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone {
+        disableWarningsInGeneratedCode = true
+        excludedPaths = '.*/build/generated/.*'
+
+        // Opt in to the fix-in-place mode with `./gradlew compileJava -PerrorproneFix`.
+        // Patches are written straight to the source tree, so run it on a clean worktree.
+        if (project.hasProperty('errorproneFix')) {
+            errorproneArgs.addAll('-XepPatchChecks:' + project.findProperty('errorproneFix'),
+                    '-XepPatchLocation:IN_PLACE')
+        }
+    }
+}

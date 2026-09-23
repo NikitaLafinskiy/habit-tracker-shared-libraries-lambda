@@ -1,0 +1,16 @@
+{
+  "Records": [
+    {
+      "eventID": "shardId-000000000000:49590338271490256608559692538361571095921575989136588898",
+      "eventName": "aws:kinesis:record",
+      "eventVersion": "1.0",
+      "eventSource": "aws:kinesis",
+      "awsRegion": "eu-central-1",
+      "kinesis": {
+        "partitionKey": "sentinel-user@example.com",
+        "data": "SGVsbG8sIHRoaXMgaXMgYSB0ZXN0Lg==",
+        "sequenceNumber": "49590338271490256608559692538361571095921575989136588898"
+      }
+    }
+  ]
+}

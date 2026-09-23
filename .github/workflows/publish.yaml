@@ -1,0 +1,32 @@
+name: Publish
+run-name: ${{ github.ref_name }}-${{ github.actor }}
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  # Needed to publish to this repo's own GitHub Packages Maven registry.
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Java CI
+        uses: NikitaLafinskiy/habit-tracker-iac/.github/actions/java-ci@main
+        with:
+          java-version: '24'
+
+      # GITHUB_TOKEN is the default Actions token, scoped to this repo by
+      # the `packages: write` permission above - no PAT needed.
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publish --no-daemon

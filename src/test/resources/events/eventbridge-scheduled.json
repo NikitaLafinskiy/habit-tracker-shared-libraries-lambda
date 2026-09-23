@@ -1,0 +1,13 @@
+{
+  "version": "0",
+  "id": "8f9a0b1c-2d3e-4f50-9182-736455647382",
+  "detail-type": "Scheduled Event",
+  "source": "aws.events",
+  "account": "123456789012",
+  "time": "2026-08-03T02:00:00Z",
+  "region": "eu-central-1",
+  "resources": [
+    "arn:aws:events:eu-central-1:123456789012:rule/nightly-metric-rollup"
+  ],
+  "detail": {}
+}

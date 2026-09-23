@@ -1,0 +1,31 @@
+{
+  "Records": [
+    {
+      "eventID": "1a2b3c4d5e6f7890abcdef1234567890",
+      "eventName": "INSERT",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "eu-central-1",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1769000000,
+        "Keys": {
+          "pk": {
+            "S": "USER#sentinel-user@example.com"
+          },
+          "sk": {
+            "S": "BLUEPRINT#bp-1#INSTANCE#2026-08-03"
+          }
+        },
+        "NewImage": {
+          "value": {
+            "N": "72.4"
+          }
+        },
+        "SequenceNumber": "4421600000000000001",
+        "SizeBytes": 112,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:eu-central-1:123456789012:table/metrics/stream/2026-08-03T00:00:00.000"
+    }
+  ]
+}
