@@ -22,6 +22,15 @@ of Lambda dependencies.
 | `SesNotificationEventStrategy` | only if the service defines a `SesNotificationHandler` bean (auth) |
 | `KeepWarmEventStrategy` | always |
 
+It also registers `SsmBackedPropertiesEnvironmentPostProcessor` (via `META-INF/spring.factories`).
+The `iac` Lambda module passes a service's `ssm_parameter_paths` as one `SSM_BACKED_PROPERTIES`
+env var of `property.name=/ssm/path` lines. This post-processor resolves each line at startup
+(decrypted, inside the SnapStart snapshot) and publishes the values as the highest-precedence
+property source. A missing grant fails startup with a message naming the parameter. It moved here
+in 0.2.0: before that, api, auth and ai-insight each carried a copy, and auth-client ≤ 0.3.0 had a
+fourth. Since the `lib/` zip keeps every jar's `spring.factories`, api and auth ran two of them
+and fetched every secret twice.
+
 ## What a service supplies
 
 - `StreamLambdaHandler`. Its FQN is pinned in each service's `.infra/main.tf`, so it is not in
