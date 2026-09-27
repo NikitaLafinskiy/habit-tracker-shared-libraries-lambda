@@ -31,10 +31,55 @@ in 0.2.0: before that, api, auth and ai-insight each carried a copy, and auth-cl
 fourth. Since the `lib/` zip keeps every jar's `spring.factories`, api and auth ran two of them
 and fetched every secret twice.
 
+## Native runtime loop (0.3.0)
+
+`com.habittracker.lambda.runtime.LambdaRuntimeLoop` is the Lambda entry point for a service built
+as a GraalVM native executable in a `provided.al2023` container image
+(see `docs/GRAALVM-MIGRATION.md` in the superproject).
+A service's `main` builds its Spring context and calls:
+
+```java
+LambdaRuntimeLoop.run(() -> context.getBean(LambdaEventDispatcher.class));
+```
+
+It speaks the [Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html)
+over the JDK's `HttpClient`:
+- **Invocations:** `invocation/next`, then `response` for the dispatcher's output. A handler
+  exception goes to `error`, in Lambda's `errorMessage`/`errorType`/`stackTrace` shape, and the loop
+  keeps serving.
+- **Rejected outcome posts:** a `response`/`error` post the Runtime API answers with 4xx is logged
+  and dropped — that invocation's outcome is lost, but the loop keeps serving. Only a 5xx container
+  error exits the process, which is what the Runtime API contract prescribes ("non-recoverable
+  state, exit promptly").
+- **Startup failures:** a failure building the context goes to `init/error` and exits the process.
+- **The `Context`** is built from the Runtime API headers and the `AWS_LAMBDA_*` environment.
+  `Lambda-Runtime-Trace-Id` is exposed as the `com.amazonaws.xray.traceHeader` system property for
+  the length of the invocation.
+
+It is hand-rolled on purpose, and it is the only hand-rolled piece of the native migration:
+- `aws-serverless-java-container`'s native loop is HTTP-only, so SQS, SNS and keep-warm events would
+  never reach the dispatcher.
+- AWS's Java runtime interface client does its Runtime API calls over JNI and loads handlers through
+  a runtime class loader. Neither works in a native image.
+
+There is **no SnapStart support** (`/runtime/restore/next`). The migration decided against SnapStart
+on custom images, because outside the Java managed runtime its cache is a fixed monthly charge.
+
+## Native-image hints
+
+`LambdaDispatchRuntimeHints`, imported by the auto-configuration with `@ImportRuntimeHints`,
+declares at build time what the library reaches reflectively:
+- the event types `LambdaEventMapper` binds (`SqsEvent`, `SqsMessage`, `SqsBatchResponse` and its
+  item, `SnsLambdaEvent`, `SnsRecord`, `SnsMessage`);
+- the `SsmBackedPropertiesEnvironmentPostProcessor` constructor.
+
+A new event type bound through `LambdaEventMapper.read` must be added to `EVENT_TYPES`, or it fails
+only in the native binary. `LambdaDispatchRuntimeHintsTest` checks every entry.
+
 ## What a service supplies
 
-- `StreamLambdaHandler`. Its FQN is pinned in each service's `.infra/main.tf`, so it is not in
-  here.
+- Its entry point: a `main` calling `LambdaRuntimeLoop.run` for a native image, or, until a
+  service has migrated, the JVM `StreamLambdaHandler` whose FQN is pinned in its `.infra/main.tf`.
 - An `HttpRequestProxy` bean, if the service serves API Gateway. Write it as an explicit lambda
   body, never a method reference to `StreamLambdaHandler::proxy`. The reason is in
   `docs/api-CLAUDE.md` "Lambda event dispatch".
